@@ -5,19 +5,26 @@ buildscript {
 
 description = 'RxJava: Reactive Extensions for the JVM – a library for composing asynchronous and event-based programs using observable sequences for the Java VM.'
 
-apply plugin: 'rxjava-project'
+//apply plugin: 'rxjava-project'
 apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'io.reactivex'
+// artifactId is taken by default, from folder name
+version = '2.0.0'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
-
+repositories {
+    jcenter()
+}
 dependencies {
     compile 'org.reactivestreams:reactive-streams:1.0.0'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.10.19'
 
-    perfCompile 'org.openjdk.jmh:jmh-core:1.10.5'
-    perfCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.10.5'
+    //perfCompile 'org.openjdk.jmh:jmh-core:1.10.5'
+    //perfCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.10.5'
     // perfCompile 'org.reactivex:rxjava:1.0.14'
 }
 
@@ -26,10 +33,7 @@ javadoc {
 }
 
 // support for snapshot/final releases with the various branches RxJava uses
-nebulaRelease {
-    addReleaseBranchPattern(/\d+\.\d+\.\d+/)
-    addReleaseBranchPattern('HEAD')
-}
+
 
 if (project.hasProperty('release.useLastTag')) {
     tasks.prepare.enabled = false
@@ -37,4 +41,19 @@ if (project.hasProperty('release.useLastTag')) {
 
 test{
      maxHeapSize = "2g"
+}
+
+task writeNewPom << {
+    pom {
+        project {
+            inceptionYear '2014'
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+        }
+    }.writeTo("pom.xml")
 }
