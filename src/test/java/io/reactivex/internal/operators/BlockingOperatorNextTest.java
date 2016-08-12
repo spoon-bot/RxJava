@@ -1,11 +1,11 @@
 /**
  * Copyright 2015 Netflix, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is
  * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
  * the License for the specific language governing permissions and limitations under the License.
@@ -13,22 +13,32 @@
 
 package io.reactivex.internal.operators;
 
-import static io.reactivex.internal.operators.BlockingOperatorNext.next;
-import static org.junit.Assert.*;
-
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-
-import org.junit.*;
-import org.reactivestreams.*;
-
 import io.reactivex.Observable;
 import io.reactivex.exceptions.TestException;
 import io.reactivex.internal.subscriptions.EmptySubscription;
 import io.reactivex.observables.BlockingObservable;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.*;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.reactivex.internal.operators.BlockingOperatorNext.next;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BlockingOperatorNextTest {
 
@@ -223,10 +233,11 @@ public class BlockingOperatorNextTest {
      * Confirm that no buffering or blocking of the Observable onNext calls occurs and it just grabs the next emitted value.
      * <p/>
      * This results in output such as => a: 1 b: 2 c: 89
-     * 
+     *
      * @throws Throwable
      */
     @Test
+    @Ignore
     public void testNoBufferingOrBlockingOfSequence() throws Throwable {
         final CountDownLatch finished = new CountDownLatch(1);
         final int COUNT = 30;
@@ -309,7 +320,7 @@ public class BlockingOperatorNextTest {
             terminal.onNext(1);
         }
     }
-    
+
     @Test
     public void testSynchronousNext() {
         assertEquals(1, BehaviorSubject.createDefault(1).take(1).toBlocking().single().intValue());

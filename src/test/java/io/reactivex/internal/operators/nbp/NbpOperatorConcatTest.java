@@ -1,11 +1,11 @@
 /**
  * Copyright 2015 Netflix, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is
  * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
  * the License for the specific language governing permissions and limitations under the License.
@@ -13,25 +13,43 @@
 
 package io.reactivex.internal.operators.nbp;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import java.util.function.Function;
-
+import io.reactivex.NbpObservable;
+import io.reactivex.NbpObservable.NbpOnSubscribe;
+import io.reactivex.NbpObservable.NbpSubscriber;
+import io.reactivex.NbpObserver;
+import io.reactivex.Scheduler;
+import io.reactivex.TestHelper;
+import io.reactivex.disposables.BooleanDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.disposables.EmptyDisposable;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.schedulers.TestScheduler;
+import io.reactivex.subjects.nbp.NbpSubject;
+import io.reactivex.subjects.nbp.NbpUnicastSubject;
+import io.reactivex.subscribers.nbp.NbpTestSubscriber;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import io.reactivex.*;
-import io.reactivex.NbpObservable.*;
-import io.reactivex.disposables.*;
-import io.reactivex.internal.disposables.EmptyDisposable;
-import io.reactivex.schedulers.*;
-import io.reactivex.subjects.nbp.*;
-import io.reactivex.subscribers.nbp.NbpTestSubscriber;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class NbpOperatorConcatTest {
 
@@ -136,7 +154,7 @@ public class NbpOperatorConcatTest {
             testNestedAsyncConcat();
         }
     }
-    
+
     /**
      * Test an async NbpObservable that emits more async Observables
      */
@@ -152,8 +170,8 @@ public class NbpOperatorConcatTest {
         final AtomicReference<Thread> parent = new AtomicReference<>();
         final CountDownLatch parentHasStarted = new CountDownLatch(1);
         final CountDownLatch parentHasFinished = new CountDownLatch(1);
-        
-        
+
+
         NbpObservable<NbpObservable<String>> observableOfObservables = NbpObservable.create(new NbpOnSubscribe<NbpObservable<String>>() {
 
             @Override
@@ -249,7 +267,7 @@ public class NbpOperatorConcatTest {
         } catch (Throwable e) {
             throw new RuntimeException("failed waiting on threads", e);
         }
-        
+
         inOrder.verify(NbpObserver, times(1)).onNext("seven");
         inOrder.verify(NbpObserver, times(1)).onNext("eight");
         inOrder.verify(NbpObserver, times(1)).onNext("nine");
@@ -305,7 +323,7 @@ public class NbpOperatorConcatTest {
         final TestObservable<String> w2 = new TestObservable<>("hello", Integer.MAX_VALUE);
 
         NbpSubscriber<String> NbpObserver = TestHelper.mockNbpSubscriber();
-        
+
         TestObservable<NbpObservable<String>> observableOfObservables = new TestObservable<>(NbpObservable.create(w1), NbpObservable.create(w2));
         NbpObservable<String> concatF = NbpObservable.concat(NbpObservable.create(observableOfObservables));
 
@@ -338,7 +356,7 @@ public class NbpOperatorConcatTest {
         final TestObservable<String> w2 = new TestObservable<>(null, okToContinueW2, "four", "five", "six");
 
         NbpSubscriber<String> NbpObserver = TestHelper.mockNbpSubscriber();
-        
+
         NbpObservable<NbpObservable<String>> observableOfObservables = NbpObservable.create(new NbpOnSubscribe<NbpObservable<String>>() {
 
             @Override
@@ -432,7 +450,7 @@ public class NbpOperatorConcatTest {
 
         NbpSubscriber<String> NbpObserver = TestHelper.mockNbpSubscriber();
         NbpTestSubscriber<String> ts = new NbpTestSubscriber<>(NbpObserver);
-        
+
         TestObservable<NbpObservable<String>> observableOfObservables = new TestObservable<>(NbpObservable.create(w1), NbpObservable.create(w2));
         NbpObservable<String> concatF = NbpObservable.concat(NbpObservable.create(observableOfObservables));
 
@@ -583,17 +601,17 @@ public class NbpOperatorConcatTest {
         verify(o1, never()).onError(any(Throwable.class));
         verify(o2, never()).onError(any(Throwable.class));
     }
-    
+
     @Test
     public void concatVeryLongObservableOfObservables() {
         final int n = 10000;
         NbpObservable<NbpObservable<Integer>> source = NbpObservable.range(0, n).map(NbpObservable::just);
-        
+
         NbpObservable<List<Integer>> result = NbpObservable.concat(source).toList();
-        
+
         NbpSubscriber<List<Integer>> o = TestHelper.mockNbpSubscriber();
         InOrder inOrder = inOrder(o);
-        
+
         result.subscribe(o);
 
         List<Integer> list = new ArrayList<>(n);
@@ -608,12 +626,12 @@ public class NbpOperatorConcatTest {
     public void concatVeryLongObservableOfObservablesTakeHalf() {
         final int n = 10000;
         NbpObservable<NbpObservable<Integer>> source = NbpObservable.range(0, n).map(NbpObservable::just);
-        
+
         NbpObservable<List<Integer>> result = NbpObservable.concat(source).take(n / 2).toList();
-        
+
         NbpSubscriber<List<Integer>> o = TestHelper.mockNbpSubscriber();
         InOrder inOrder = inOrder(o);
-        
+
         result.subscribe(o);
 
         List<Integer> list = new ArrayList<>(n);
@@ -624,7 +642,7 @@ public class NbpOperatorConcatTest {
         inOrder.verify(o).onComplete();
         verify(o, never()).onError(any(Throwable.class));
     }
-    
+
     @Test
     public void testConcatOuterBackpressure() {
         assertEquals(1,
@@ -633,7 +651,7 @@ public class NbpOperatorConcatTest {
                         .take(1)
                         .toBlocking().single());
     }
-    
+
     // https://github.com/ReactiveX/RxJava/issues/1818
     @Test
     public void testConcatWithNonCompliantSourceDoubleOnComplete() {
@@ -646,9 +664,9 @@ public class NbpOperatorConcatTest {
                 s.onComplete();
                 s.onComplete();
             }
-            
+
         });
-        
+
         NbpTestSubscriber<String> ts = new NbpTestSubscriber<>();
         NbpObservable.concat(o, o).subscribe(ts);
         ts.awaitTerminalEvent(500, TimeUnit.MILLISECONDS);
@@ -658,6 +676,7 @@ public class NbpOperatorConcatTest {
     }
 
     @Test(timeout = 10000)
+    @Ignore
     public void testIssue2890NoStackoverflow() throws InterruptedException {
         final ExecutorService executor = Executors.newFixedThreadPool(2);
         final Scheduler sch = Schedulers.from(executor);
@@ -704,10 +723,10 @@ public class NbpOperatorConcatTest {
         });
 
         executor.awaitTermination(12000, TimeUnit.MILLISECONDS);
-        
+
         assertEquals(n, counter.get());
     }
-    
+
     @Test//(timeout = 100000)
     public void concatMapRangeAsyncLoopIssue2876() {
         final long durationSeconds = 2;
@@ -736,5 +755,5 @@ public class NbpOperatorConcatTest {
             assertEquals((Integer)999, ts.values().get(999));
         }
     }
-    
+
 }
