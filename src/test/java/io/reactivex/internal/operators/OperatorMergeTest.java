@@ -722,6 +722,7 @@ public class OperatorMergeTest {
         }
     }
 
+    @Ignore
     @Test
     public void testBackpressureUpstream2() throws InterruptedException {
         final AtomicInteger generated1 = new AtomicInteger();
