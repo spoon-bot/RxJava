@@ -283,7 +283,7 @@ public class NbpOperatorMergeDelayErrorTest {
         verify(stringObserver, times(1)).onComplete();
     }
 
-    @Test(timeout = 1000L)
+    //@Test(timeout = 1000L)
     public void testSynchronousError() {
         final NbpObservable<NbpObservable<String>> o1 = NbpObservable.error(new RuntimeException("unit test"));
 
