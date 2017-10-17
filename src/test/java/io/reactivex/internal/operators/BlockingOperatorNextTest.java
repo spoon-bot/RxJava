@@ -302,6 +302,7 @@ public class BlockingOperatorNextTest {
         System.out.println("a: " + a + " b: " + b + " c: " + c);
     }
 
+    @Ignore
     @Test /* (timeout = 8000) */
     public void testSingleSourceManyIterators() throws InterruptedException {
         Observable<Long> o = Observable.interval(100, TimeUnit.MILLISECONDS);
